@@ -1,0 +1,208 @@
+
+<script>
+    // true - включить код, false - выключить код
+    let workCode = true;
+
+    let tempUid = 0;
+
+    function add_old_price(){
+        for(let i = 0; i < window.tcart.products.length; i++){
+            if(!('oldprice' in window.tcart.products[i]) && !('free' in window.tcart.products[i])){
+                window.tcart.products[i].oldprice = window.tcart.products[i].price;
+                console.log(window.tcart.products[i].oldprice);
+            }
+        }
+    }
+
+    function click_ev(){
+        document.body.addEventListener("click", ev => {
+            if(
+                ev.target.classList.contains('t706__product-plus') ||
+                ev.target.classList.contains('t706__product-minus') ||
+                ev.target.classList.contains('t706__product-del') ||
+                ev.target.href == "#order" ||
+                ev.target.parentNode.classList.contains('t706__product-plus') ||
+                ev.target.parentNode.classList.contains('t706__product-minus') ||
+                ev.target.parentNode.classList.contains('t706__product-del') ||
+                ev.target.parentNode.href == "#order" ||
+                ev.target.parentNode.parentNode.href == "#order" ||
+                ev.target.parentNode.parentNode.parentNode.href == "#order" ||
+                ev.target.classList.contains("t-store__card__btn") || 
+                ev.target.classList.contains("t-store__card__btn-text") ||
+                ev.target.classList.contains("t-store__prod-popup__btn") 
+            ){
+                setTimeout(() => {
+                    init_3in1();
+                }, 100);
+            }
+        });
+    }
+
+    function find_smallest(){
+        let counter = 0;
+        let temp = 0;
+        for(let i = 0; i < window.tcart.products.length; i++){
+            if(counter == 0){
+                counter = window.tcart.products[i].price;
+            } else{
+                if(counter > window.tcart.products[i].price && !('free' in window.tcart.products[i])){
+                    counter = window.tcart.products[i].price;
+                    temp = i;
+                } 
+            }
+        }
+        return temp;
+    }
+
+    function add_free(){
+        let smallest = find_smallest();
+        console.log(smallest);
+        console.log(window.tcart.products);
+        for(let i = 0; i < window.tcart.products.length; i++){
+            if(i == smallest){
+                if(window.tcart.products[i].quantity == 1 && !('free' in window.tcart.products[i])){
+                    console.log(1);
+                    window.tcart.products[i].free = true;
+                    window.tcart.products[i].price = 0;
+                    window.tcart.products[i].amount = 0;
+                    window.tcart.products[i].one = true;
+                    window.tcart.products[i]['gen_uid_old'] = window.tcart.products[i]['gen_uid'];
+                    window.tcart.products[i]['gen_uid'] = '';
+                    window.tcart.products[i].oldurl = window.tcart.products[i].url;
+                    window.tcart.products[i].url = '';
+                    window.tcart.products[i].name += " в подарок!";
+                    window.tcart.products[i].ts = '';
+                    window.tcart.products[i].lid = '';
+                    window.tcart.products[i]['part_uids'] = '';
+                    window.tcart.products[i].recid = '';
+                    window.tcart.products[i].sku = '';
+                    window.tcart.products[i].uid = '';
+                   
+                }  else{
+                    let freeobj = {};
+                    Object.assign(freeobj, window.tcart.products[i]);
+                    window.tcart.products[i].quantity -= 1;
+                    freeobj.free = true;
+                    freeobj.price = 0;
+                    freeobj.quantity = 1;
+                    freeobj.amount = 0;
+                    freeobj['gen_uid_old'] = freeobj['gen_uid'];
+                    freeobj['gen_uid'] = '';
+                    freeobj.oldurl = freeobj.url;
+                    freeobj.url = '';
+                    freeobj.name += " в подарок!";
+                    freeobj.ts = '';
+                    freeobj.lid = '';
+                    freeobj['part_uids'] = '';
+                    freeobj.recid = '';
+                    freeobj.sku = '';
+                    freeobj.uid = '';
+                    window.tcart.products.push(freeobj);
+                }
+            }
+        }
+        tcart__reDrawProducts(),
+        tcart__reDrawTotal();
+        console.log(window.tcart.products);
+    }
+    
+    function init_3in1(){
+        add_old_price();
+        if(counter_amount()){
+            find_free();
+            add_free();
+            check_amount();
+            tcart__updateTotalProductsinCartObj(),
+            tcart__reDrawProducts(),
+            tcart__reDrawTotal();
+            tcart__saveLocalObj();
+        } else{
+            console.log(1);
+            find_free();
+            check_amount();
+            tcart__updateTotalProductsinCartObj(),
+            tcart__reDrawProducts(),
+            tcart__reDrawTotal();
+            tcart__saveLocalObj();
+        }
+    }
+
+    function remove_tabs(){
+        document.querySelectorAll('.t706__product-amount').forEach(el => {
+            if((el.textContent == '')){
+                el.parentNode.querySelector('.t706__product-plusminus').style.pointerEvents = "none";
+                el.parentNode.querySelector('.t706__product-minus').style.opacity = ".4";
+                el.parentNode.querySelector('.t706__product-plus').style.opacity = ".4";
+            } else{
+                el.parentNode.querySelector('.t706__product-plusminus').style.pointerEvents = "auto";
+                el.parentNode.querySelector('.t706__product-minus').style.opacity = "1";
+                el.parentNode.querySelector('.t706__product-plus').style.opacity = "1";
+            }
+        });  
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+        if(workCode){
+            setTimeout(() => {
+                setInterval(tcart__updateProductsPrice, 10);
+                click_ev();
+                init_3in1();
+                setInterval(remove_tabs, 300);
+            }, 1000);
+        }
+    });
+    
+    function counter_amount(){
+        let counter = 0;
+        for(let i = 0; i < window.tcart.products.length; i++){
+            counter += window.tcart.products[i].quantity;
+        }
+        if(counter >= 3){
+            return true;
+        } else{
+            return false;
+        }
+    }
+
+    function find_more_el(uid){
+        for(let i = 0; i < window.tcart.products.length; i++){
+            if(window.tcart.products[i]['gen_uid'] == uid){
+                window.tcart.products[i].quantity = window.tcart.products[i].quantity + 1;
+                if(window.tcart.products[i].amount != window.tcart.products[i].quantity * window.tcart.products[i].price){
+                    window.tcart.products[i].amount = window.tcart.products[i].quantity * window.tcart.products[i].price;
+                }
+            }
+        }
+    }
+
+    function check_amount(){
+        for(let i = 0; i < window.tcart.products.length; i++){
+            if(window.tcart.products[i].amount != window.tcart.products[i].quantity * window.tcart.products[i].price){
+                window.tcart.products[i].amount = window.tcart.products[i].quantity * window.tcart.products[i].price;
+            }
+        }
+    }
+
+    function find_free(){
+        for(let i = 0; i < window.tcart.products.length; i++){
+            if(('free' in window.tcart.products[i])){
+                if('one' in window.tcart.products[i]){
+                    let obj = window.tcart.products[i];
+                    window.tcart.products.splice(i, 1);
+                    delete obj.free;
+                    delete obj.one;
+                    obj.price = obj.oldprice;
+                    obj.amount = obj.price * obj.quantity;
+                    obj['gen_uid'] = obj['gen_uid_old'];
+                    obj.url = obj.oldurl;
+                    obj.name = obj.name.replace(" в подарок!", '');
+                    window.tcart.products.push(obj);
+                } else{
+                    find_more_el(window.tcart.products[i]['gen_uid']);
+                    window.tcart.products.splice(i, 1);
+                }
+                
+            }
+        }
+    }
+</script>
